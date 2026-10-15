@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ShowTails | Descendant Tree</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#18334c;background:#f4f7fc}*{box-sizing:border-box}body{margin:0}header{background:#163e79;color:white;padding:20px 28px}header h1{margin:0;font-size:25px}header p{margin:5px 0 0;color:#dce8fa;font-size:13px}.wrap{padding:20px;max-width:100%;margin:auto}.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:white;border:1px solid #dce5f2;border-radius:13px;padding:16px;margin-bottom:14px}label{font-size:12px;font-weight:700;display:grid;gap:5px}input,select,button{font:inherit;border:1px solid #b9cbe0;border-radius:8px;padding:9px 11px;background:white;color:#173a68}input{min-width:175px}button{cursor:pointer;background:#174a8b;color:white;border-color:#174a8b}button.secondary{background:white;color:#174a8b}button:hover{filter:brightness(.94)}.stats{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px}.stat{background:white;border:1px solid #dce5f2;border-radius:11px;padding:12px 20px;min-width:150px}.stat strong{font-size:23px;display:block;color:#184d8f}.stat small{color:#5c7186}.hint{font-size:13px;color:#5d6e83;margin:8px 0 14px}.viewport{overflow:hidden;position:relative;touch-action:none;cursor:grab;height:68vh;min-height:460px;background:white;border:1px solid #dce5f2;border-radius:14px;min-height:460px;padding:35px 25px;scroll-behavior:smooth}.tree-stage{position:absolute;left:0;top:0;transform-origin:0 0;width:max-content;will-change:transform}.viewport.dragging{cursor:grabbing}.tree,.tree ul{list-style:none;margin:0;padding:0;display:flex;justify-content:center;align-items:flex-start}.tree{width:max-content;min-width:100%;margin:0 auto}.tree li{position:relative;text-align:center;padding:30px 10px 0;display:flex;flex-direction:column;align-items:center}.tree>li{padding-top:0}.tree ul{position:relative;padding-top:30px}.tree ul>li:before,.tree ul>li:after{content:"";position:absolute;top:0;right:50%;width:50%;height:30px;border-top:2px solid #bad0e9}.tree ul>li:after{right:auto;left:50%;border-left:2px solid #bad0e9}.tree ul>li:only-child:before,.tree ul>li:only-child:after{display:none}.tree ul>li:only-child{padding-top:0}.tree ul>li:first-child:before,.tree ul>li:last-child:after{border:0}.tree ul>li:last-child:before{border-right:2px solid #bad0e9;border-radius:0 7px 0 0}.tree ul>li:first-child:after{border-radius:7px 0 0 0}.tree li>ul:before{content:"";position:absolute;top:0;left:50%;height:30px;border-left:2px solid #bad0e9}.tree li>ul:has(>li:only-child):before{height:30px}.tree li>ul>li:only-child:after{display:block;border:0;border-left:2px solid #bad0e9;height:30px;top:0}.tree li>ul>li:only-child{padding-top:30px}.tree li>.node{flex:0 0 auto;text-align:left}.tree li>ul{align-self:center}.node{display:inline-flex;vertical-align:middle;gap:10px;align-items:center;min-width:225px;max-width:300px;border:1px solid #c6d8ed;border-radius:11px;padding:11px 12px;background:#f9fbff;box-shadow:0 2px 4px #1d3e6610}.node.root{border-width:2px}.node.male{background:#d9ebff;border-color:#6aa4e8}.node.female{background:#fbe0eb;border-color:#df8eb0}.node.root.male{background:#c7e1ff;border-color:#1b5aa2}.node.root.female{background:#f8cfe0;border-color:#b95085}.node .details{min-width:0;flex:1}.node .field{font-size:11px;line-height:1.4;margin-top:3px;overflow-wrap:anywhere;white-space:pre-wrap}.node .field b{color:#244664}.node .name{line-height:1.35}.node{min-width:280px;max-width:330px;align-items:flex-start}.node .tag{margin-top:8px}.node .toggle{flex-shrink:0}.node .name{font-size:14px;font-weight:750;overflow-wrap:anywhere}.node .meta{font-size:11px;color:#62788c;margin-top:4px}.node .tag{font-size:10px;background:#e3edf9;color:#1d548d;padding:3px 6px;border-radius:5px;display:inline-block;margin-top:5px}.toggle{border:0;padding:4px 7px;min-width:26px;font-size:14px;border-radius:6px;margin-left:auto}.count{font-size:11px;color:#64788d}.error{background:#fff0f0;border:1px solid #e9a4a4;padding:13px;border-radius:8px;color:#8e2222}.empty{color:#63758a}.highlight{outline:3px solid #e9b448}.mode{font-size:12px;color:#6a7c90;margin-bottom:10px}@media print{.viewport{height:auto;overflow:visible;min-height:0}.tree-stage{position:static;transform:none!important}.view-controls{display:none!important}header,.toolbar,.hint,.mode{display:none}.viewport{overflow:visible;border:0}.wrap{padding:0}body{background:white}}
+
+/* Animated border filters inspired by the 8-generation explorer. */
+@keyframes filterFlash{0%,100%{box-shadow:0 0 0 3px var(--flash-color);border-color:var(--flash-color)}50%{box-shadow:0 0 0 1px transparent;border-color:var(--flash-color)}}
+.node.filter-match{--flash-color:#7c3aed;border-width:3px!important;animation:filterFlash 1s ease-in-out infinite}
+.node.filter-match.filter-color{--flash-color:#8b5cf6}
+.node.filter-match.filter-genetics{--flash-color:#14b8a6}
+.node.filter-match.filter-rabbitry{--flash-color:#0ea5a4}
+.node.filter-match.filter-registered{--flash-color:#2f6fed}
+.node.filter-match.filter-gc{--flash-color:#d4aa00}
+.node.filter-match.filter-missing{--flash-color:#f59e0b}
+.node.filter-match.filter-sex{--flash-color:#e05c9c}
+.node.filter-match.filter-repeat{--flash-color:#ff2d2d}
+.node.filter-match.filter-keyword{--flash-color:#7c3aed}
+.filter-panel{background:white;border:1px solid #dce5f2;border-radius:13px;margin-bottom:14px;padding:12px 16px}
+.filter-panel summary{cursor:pointer;font-weight:750;color:#174a8b}
+.filter-grid{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-top:14px}
+.filter-grid input[type=checkbox]{min-width:0;width:16px;height:16px;accent-color:#174a8b}
+.filter-grid .check{display:flex;flex-direction:row;align-items:center;gap:6px;font-size:13px}
+.filter-grid select{min-width:135px}.filter-grid input{min-width:145px}
+.filter-count{font-size:12px;color:#5d6e83;margin-top:10px}
+@media print{.filter-panel{display:none}}
+</style></head><body>
+<header><h1>ShowTails · Descendant Tree</h1><p>Explore offspring and every recorded generation of a rabbit's bloodline</p></header>
+<main class="wrap"><div class="toolbar"><label>Rabbit ID<input id="rabbitId" placeholder="Enter Rabbit ID"></label><button id="load">View Descendants</button><label>Show generations<select id="depth"><option value="all">All generations</option><option value="1">1 generation</option><option value="2">2 generations</option><option value="3">3 generations</option><option value="4">4 generations</option><option value="5">5 generations</option></select></label><label>Find in tree<input id="search" placeholder="Name, ear number, ID, pedigree data"></label><button class="secondary" id="expand">Expand All</button><button class="secondary" id="collapse">Collapse All</button><button class="secondary" id="zoomIn" title="Zoom in">＋</button><button class="secondary" id="zoomOut" title="Zoom out">－</button><button class="secondary" id="fitView">Fit Tree</button><button class="secondary" id="resetView">Reset View</button><button class="secondary" id="print">Print</button></div>
+<details class="filter-panel" open><summary>Highlight Filters · Flash Matching Rabbit Borders</summary>
+<div class="filter-grid">
+<label>Color search<input id="colorFilter" placeholder="Blue, Otter, Broken..."></label>
+<label>Color match<select id="colorMode"><option value="contains">Contains</option><option value="exact">Exact match</option></select></label>
+<label>Genetics search<input id="geneticsFilter" placeholder="dd, En, aa..."></label>
+<label>Rabbitry / breeder<input id="rabbitryFilter" placeholder="Rabbitry name"></label>
+<label>Sex<select id="sexFilter"><option value="">All sexes</option><option value="male">Bucks / males</option><option value="female">Does / females</option></select></label>
+<label class="check"><input type="checkbox" id="registeredFilter"> Registered rabbits</label>
+<label class="check"><input type="checkbox" id="gcFilter"> Grand champions</label>
+<label class="check"><input type="checkbox" id="repeatFilter"> Repeated descendants</label>
+<label>Missing field<select id="missingFilter"><option value="">None</option><option value="rabbitName">Name</option><option value="earNumber">Ear number</option><option value="color">Color</option><option value="weightLbs">Weight</option><option value="dob">DOB</option><option value="arbaRegistrationNumber">Registration</option><option value="grandChampionNumber">GC number</option><option value="genotype">Genetics</option><option value="breederSRabbitryName">Rabbitry</option></select></label>
+<button class="secondary" id="clearFilters" type="button">Clear Filters</button>
+</div><div class="filter-count" id="filterCount">No active highlight filters.</div></details>
+<div class="stats"><div class="stat"><strong id="unique">—</strong><small>Unique descendants</small></div><div class="stat"><strong id="generations">—</strong><small>Recorded generations</small></div><div class="stat"><strong id="direct">—</strong><small>Direct offspring</small></div><div class="stat"><strong id="branches">—</strong><small>Visible tree cards</small></div></div>
+<p class="mode" id="mode"></p><p class="hint">The selected rabbit is centered at the top. Each generation branches horizontally across the row below its parent. Drag to pan, scroll to zoom, or pinch with two fingers. Select + or − on a card to expand or collapse branches. Rabbits may appear in more than one branch when pedigrees overlap.</p><div class="viewport" id="viewport"><p class="empty">Enter a Rabbit ID to begin. Live data loads directly from Glide once the API token is configured in the HTML.</p></div></main>
+<script type="module">
+'use strict';
+import * as glide from "https://esm.sh/@glideapps/tables";
+// Same Glide Tables SDK connection pattern as the existing 8-generation viewer.
+// Direct Glide Tables SDK connection, matching the existing 8-generation viewer.
+// WARNING: This credential is visible to anyone who views the published page source.
+// Use only if you accept the public-access and data-exposure implications.
+const APP_ID = '8lcj30iX3DO7vjRtX1XK';
+const TABLE_ID = 'native-table-12f8a654-9e49-4671-b2c4-c20305fa6556';
+const COLUMN_DEFS = {
+ rabbitId:{type:'string',name:'3yX2y'},rabbitName:{type:'string',name:'NEL3b'},
+ sireId:{type:'string',name:'w065N'},damId:{type:'string',name:'wkGAs'},
+ sex:{type:'string',name:'6lE2e'},earNumber:{type:'string',name:'IjQAs'},
+ color:{type:'string',name:'7b1NR'},dob:{type:'date-time',name:'J5KOz'},
+ ownerEmail:{type:'email-address',name:'ubKqh'},secondOwner:{type:'email-address',name:'18W93'},
+ status:{type:'string',name:'l8yJA'},
+ breederSRabbitryName:{type:'string',name:'Me4W5'},weightLbs:{type:'string',name:'1fVZU'},
+ earLength:{type:'string',name:'Rsov4'},genotype:{type:'string',name:'onWoH'},
+ manuallyEnteredLegs:{type:'number',name:'0lrJV'},arbaRegistrationNumber:{type:'string',name:'hZuje'},
+ grandChampionNumber:{type:'string',name:'DFEM6'},customPedigreeData:{type:'string',name:'Jn1Wr'}
+};
+const GLIDE_API_TOKEN = 'PASTE_YOUR_GLIDE_TABLES_API_TOKEN_HERE';
+function normalizeRows(result){
+ if(Array.isArray(result))return result;
+ for(const key of ['rows','data','items'])if(Array.isArray(result?.[key]))return result[key];
+ return [];
+}
+function unwrap(value){
+ if(value==null)return '';
+ if(typeof value!=='object')return value;
+ for(const key of ['value','displayValue','text','content','formatted'])if(value[key]!==undefined)return unwrap(value[key]);
+ return '';
+}
+function readCell(row,logical,column){
+ for(const obj of [row,row?.data,row?.values,row?.cells,row?.columns,row?._values,row?._data]){
+  if(!obj)continue;
+  for(const key of [logical,column])if(obj[key]!==undefined)return unwrap(obj[key]);
+ }
+ if(typeof row?.get==='function')for(const key of [logical,column]){
+  try{const val=row.get(key);if(val!==undefined)return unwrap(val)}catch{}
+ }
+ return '';
+}
+const C = {rabbitId:'3yX2y',rabbitName:'NEL3b',sireId:'w065N',damId:'wkGAs',sex:'6lE2e',earNumber:'IjQAs',color:'7b1NR',dob:'J5KOz',ownerEmail:'ubKqh',secondOwner:'18W93',status:'l8yJA',breederSRabbitryName:'Me4W5',weightLbs:'1fVZU',earLength:'Rsov4',genotype:'onWoH',manuallyEnteredLegs:'0lrJV',arbaRegistrationNumber:'hZuje',grandChampionNumber:'DFEM6',customPedigreeData:'Jn1Wr'};
+const params = new URLSearchParams(location.search);
+const DEMO = [
+ {rabbitId:'DEMO-100',rabbitName:"PH's Legacy",sex:'Buck',earNumber:'L100',color:'Tortoise'},
+ {rabbitId:'DEMO-101',rabbitName:"PH's Champion",sireId:'DEMO-100',sex:'Buck',earNumber:'C101',color:'Black'},
+ {rabbitId:'DEMO-102',rabbitName:"PH's Grace",damId:'DEMO-100',sex:'Doe',earNumber:'G102',color:'Blue'},
+ {rabbitId:'DEMO-103',rabbitName:"PH's Victory",sireId:'DEMO-101',sex:'Buck',earNumber:'V103',color:'Tortoise'},
+ {rabbitId:'DEMO-104',rabbitName:"PH's Valor",sireId:'DEMO-101',sex:'Doe',earNumber:'V104',color:'Black'},
+ {rabbitId:'DEMO-105',rabbitName:"PH's Hope",damId:'DEMO-102',sex:'Doe',earNumber:'H105',color:'Blue'},
+ {rabbitId:'DEMO-106',rabbitName:"PH's Faith",damId:'DEMO-102',sex:'Doe',earNumber:'F106',color:'Broken'},
+ {rabbitId:'DEMO-107',rabbitName:"PH's Promise",sireId:'DEMO-103',damId:'DEMO-105',sex:'Buck',earNumber:'P107',color:'Tortoise'},
+ {rabbitId:'DEMO-108',rabbitName:"PH's Honor",damId:'DEMO-107',sex:'Doe',earNumber:'H108',color:'Black'}
+];
+let rows=[], byId=new Map(), children=new Map(), collapsed=new Set(), rootId='', currentMaxDepth=0;
+let occurrenceCounts=new Map();
+const el=id=>document.getElementById(id);
+const norm=v=>String(v??'').trim();
+const view={x:0,y:0,scale:1,min:.06,max:4,initialized:false};
+function applyView(){const stage=el('tree-stage');if(stage)stage.style.transform=`translate(${view.x}px,${view.y}px) scale(${view.scale})`;}
+function fitTree(){const host=el('viewport'),stage=el('tree-stage');if(!stage)return;const tree=stage.querySelector('.tree');if(!tree)return;const w=tree.offsetWidth,h=tree.offsetHeight;if(!w||!h)return;view.scale=Math.max(view.min,Math.min(1,(host.clientWidth-45)/w,(host.clientHeight-45)/h));view.x=(host.clientWidth-w*view.scale)/2;view.y=20;view.initialized=true;applyView();}
+function resetView(){const host=el('viewport'),stage=el('tree-stage');if(!stage)return;view.scale=1;view.x=(host.clientWidth-stage.offsetWidth)/2;view.y=20;view.initialized=true;applyView();}
+function zoomAt(clientX,clientY,factor){const host=el('viewport');if(!el('tree-stage'))return;const r=host.getBoundingClientRect(),px=clientX-r.left,py=clientY-r.top;const next=Math.max(view.min,Math.min(view.max,view.scale*factor));const wx=(px-view.x)/view.scale,wy=(py-view.y)/view.scale;view.scale=next;view.x=px-wx*next;view.y=py-wy*next;applyView();}
+function zoomCenter(factor){const r=el('viewport').getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,factor);}
+function centerMatch(node){const host=el('viewport'),stage=el('tree-stage');if(!stage||!node)return;const nx=node.offsetLeft,ny=node.offsetTop;const rect=node.getBoundingClientRect(),hr=host.getBoundingClientRect();view.x+=hr.left+hr.width/2-(rect.left+rect.width/2);view.y+=hr.top+hr.height/2-(rect.top+rect.height/2);applyView();}
+function wirePanZoom(){const host=el('viewport'),points=new Map();let last=null,pinch=null,moved=false;
+ host.addEventListener('wheel',e=>{if(!el('tree-stage'))return;e.preventDefault();zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.0015));},{passive:false});
+ host.addEventListener('pointerdown',e=>{if(!el('tree-stage')||e.target.closest('button'))return;points.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=false;host.setPointerCapture(e.pointerId);if(points.size===1){last={x:e.clientX,y:e.clientY};host.classList.add('dragging');}else if(points.size===2){const a=[...points.values()];const mx=(a[0].x+a[1].x)/2,my=(a[0].y+a[1].y)/2,r=host.getBoundingClientRect();pinch={distance:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),scale:view.scale,wx:(mx-r.left-view.x)/view.scale,wy:(my-r.top-view.y)/view.scale};last=null;}});
+ host.addEventListener('pointermove',e=>{if(!points.has(e.pointerId))return;points.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.size===2&&pinch){const a=[...points.values()],mx=(a[0].x+a[1].x)/2,my=(a[0].y+a[1].y)/2,r=host.getBoundingClientRect();view.scale=Math.max(view.min,Math.min(view.max,pinch.scale*Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)/Math.max(1,pinch.distance)));view.x=mx-r.left-pinch.wx*view.scale;view.y=my-r.top-pinch.wy*view.scale;moved=true;applyView();}else if(points.size===1&&last){view.x+=e.clientX-last.x;view.y+=e.clientY-last.y;last={x:e.clientX,y:e.clientY};moved=true;applyView();}});
+ const end=e=>{points.delete(e.pointerId);if(points.size<2)pinch=null;if(!points.size){last=null;host.classList.remove('dragging');}else{const a=[...points.values()][0];last={x:a.x,y:a.y};}};
+ host.addEventListener('pointerup',end);host.addEventListener('pointercancel',end);
+}
+
+function formatDob(value){if(!value)return '';const text=String(value);const match=text.match(/^(\d{4})-(\d{2})-(\d{2})/);return match?`${match[2]}/${match[3]}/${match[1]}`:text;}
+function normalize(r){let x={};for(let [key,col] of Object.entries(C))x[key]=readCell(r,key,col);return x;}
+function makeIndex(input){rows=input.map(normalize).filter(r=>norm(r.rabbitId));byId=new Map(rows.map(r=>[norm(r.rabbitId),r]));children=new Map();for(const r of rows){for(const parent of new Set([norm(r.sireId),norm(r.damId)])){if(!parent)continue;if(!children.has(parent))children.set(parent,[]);children.get(parent).push(r);}}for(const group of children.values())group.sort((a,b)=>norm(a.rabbitName).localeCompare(norm(b.rabbitName)));}
+async function fetchRows(id){
+ if(id==='DEMO-100')return DEMO;
+ if(!GLIDE_API_TOKEN || GLIDE_API_TOKEN==='PASTE_YOUR_GLIDE_TABLES_API_TOKEN_HERE'){
+  throw Error('Add your Glide Tables API token to GLIDE_API_TOKEN in descendants.html before publishing.');
+ }
+ const rabbitsTable=glide.table({token:GLIDE_API_TOKEN,app:APP_ID,table:TABLE_ID,columns:COLUMN_DEFS});
+ const result=await rabbitsTable.get();
+ const loaded=normalizeRows(result);
+ if(!loaded.length)throw Error('Glide returned no rabbit rows. Verify your token, plan, and table access.');
+ if(result?.next||result?.nextPageToken||result?.hasMore)console.warn('Glide returned a pagination indicator. Additional pages may need retrieval.');
+ return loaded;
+}
+function countOccurrences(id){
+ occurrenceCounts=new Map();
+ const walk=(rabbit,path,depth)=>{if(depth>1000)return;const key=norm(rabbit.rabbitId);occurrenceCounts.set(key,(occurrenceCounts.get(key)||0)+1);if(path.has(key))return;const next=new Set(path);next.add(key);for(const child of children.get(key)||[])walk(child,next,depth+1);};
+ const root=byId.get(id);if(root)walk(root,new Set(),0);
+}
+function matchingFilters(rabbit){
+ const hit=[];
+ const lower=v=>norm(v).toLowerCase();
+ const color=lower(el('colorFilter').value),actual=lower(rabbit.color);
+ if(color&&(el('colorMode').value==='exact'?actual===color:actual.includes(color)))hit.push('color');
+ const genetics=lower(el('geneticsFilter').value);if(genetics&&lower(rabbit.genotype).includes(genetics))hit.push('genetics');
+ const rabbitry=lower(el('rabbitryFilter').value);if(rabbitry&&lower(rabbit.breederSRabbitryName).includes(rabbitry))hit.push('rabbitry');
+ if(el('registeredFilter').checked&&norm(rabbit.arbaRegistrationNumber))hit.push('registered');
+ if(el('gcFilter').checked&&norm(rabbit.grandChampionNumber))hit.push('gc');
+ if(el('repeatFilter').checked&&(occurrenceCounts.get(norm(rabbit.rabbitId))||0)>1)hit.push('repeat');
+ const missing=el('missingFilter').value;if(missing&&!norm(rabbit[missing]))hit.push('missing');
+ const sex=lower(rabbit.sex),wanted=el('sexFilter').value;
+ if(wanted&&((wanted==='male'&&['buck','male','m','sire'].includes(sex))||(wanted==='female'&&['doe','female','f','dam'].includes(sex))))hit.push('sex');
+ return hit;
+}
+function stats(id){const visited=new Set([id]),queue=[[id,0]],depths=new Map([[id,0]]);let max=0;while(queue.length){const [parent,d]=queue.shift();for(const kid of children.get(parent)||[]){const k=norm(kid.rabbitId);if(!visited.has(k)){visited.add(k);depths.set(k,d+1);max=Math.max(max,d+1);queue.push([k,d+1]);}}}return {total:visited.size-1,max,direct:(children.get(id)||[]).length};}
+function render(){const host=el('viewport');host.replaceChildren();const root=byId.get(rootId);if(!root){host.textContent='Rabbit ID not found in the available records.';return;}const limit=el('depth').value==='all'?Infinity:Number(el('depth').value);const query=norm(el('search').value).toLowerCase();let cards=0,matchCount=0;const makeNode=(rabbit,depth,path)=>{const id=norm(rabbit.rabbitId);const li=document.createElement('li');const node=document.createElement('div');const sex=norm(rabbit.sex).toLowerCase();const sexClass=['buck','male','m','sire'].includes(sex)?' male':['doe','female','f','dam'].includes(sex)?' female':'';node.className='node'+(depth===0?' root':'')+sexClass;const details=document.createElement('div');details.className='details';const name=document.createElement('div');name.className='name';name.textContent=rabbit.rabbitName||id;const meta=document.createElement('div');meta.className='meta';
+const pedigreeFields=[
+ ['Rabbitry',rabbit.breederSRabbitryName],['Color',rabbit.color],['Ear#',rabbit.earNumber],
+ ['Weight',rabbit.weightLbs],['Sex',rabbit.sex],['Legs',rabbit.manuallyEnteredLegs],
+ ['Reg#',rabbit.arbaRegistrationNumber],['GC#',rabbit.grandChampionNumber],
+ ['DOB',formatDob(rabbit.dob)],['Ear Length',rabbit.earLength],['Genetics',rabbit.genotype],
+ ['Custom',rabbit.customPedigreeData]
+];
+for(const [label,value] of pedigreeFields){if(value===null||value===undefined||String(value).trim()==='')continue;const line=document.createElement('div');line.className='field';const bold=document.createElement('b');bold.textContent=label+': ';line.append(bold,document.createTextNode(String(value)));meta.append(line);}
+if(!meta.childNodes.length)meta.textContent='No pedigree details available';const tag=document.createElement('span');tag.className='tag';tag.textContent=depth===0?'Selected rabbit':`Generation ${depth}`;details.append(name,meta,tag);node.append(details);li.append(node);cards++;
+const matches=query&&[rabbit.rabbitName,rabbit.earNumber,rabbit.rabbitId,...pedigreeFields.map(x=>x[1])].some(x=>norm(x).toLowerCase().includes(query));if(matches){node.classList.add('filter-match','filter-keyword');matchCount++;}
+else {const filters=matchingFilters(rabbit);if(filters.length){node.classList.add('filter-match','filter-'+filters[0]);node.title='Matched: '+filters.join(', ');matchCount++;}}
+const kids=children.get(id)||[];const cycle=path.has(id);if(kids.length&&!cycle&&depth<limit){const button=document.createElement('button');button.className='toggle';button.type='button';button.title=collapsed.has(id)?'Expand branch':'Collapse branch';button.textContent=collapsed.has(id)?'+':'−';button.onclick=()=>{if(collapsed.has(id))collapsed.delete(id);else collapsed.add(id);render();};node.append(button);if(!collapsed.has(id)){const ul=document.createElement('ul');const next=new Set(path);next.add(id);for(const kid of kids)ul.append(makeNode(kid,depth+1,next));li.append(ul);}}else if(cycle){const note=document.createElement('span');note.className='count';note.textContent='Cycle detected';node.append(note);}return li;};const ul=document.createElement('ul');ul.className='tree';ul.append(makeNode(root,0,new Set()));const stage=document.createElement('div');stage.id='tree-stage';stage.className='tree-stage';stage.append(ul);host.append(stage);if(!view.initialized)fitTree();else applyView();el('branches').textContent=cards.toLocaleString();
+const active=Boolean(query||el('colorFilter').value||el('geneticsFilter').value||el('rabbitryFilter').value||el('sexFilter').value||el('missingFilter').value||el('registeredFilter').checked||el('gcFilter').checked||el('repeatFilter').checked);
+el('filterCount').textContent=active?`${matchCount} of ${cards} visible cards match at least one active highlight filter. Matches flash; nonmatching cards remain visible.`:'No active highlight filters.';
+if(query){const found=host.querySelector('.filter-keyword');if(found)centerMatch(found);}}
+async function load(){const id=norm(el('rabbitId').value);if(!id)return;el('viewport').textContent='Loading rabbit records…';try{const result=await fetchRows(id);makeIndex(result);rootId=id;collapsed.clear();view.initialized=false;countOccurrences(id);const s=stats(id);el('unique').textContent=s.total.toLocaleString();el('generations').textContent=s.max;el('direct').textContent=s.direct;el('mode').textContent=id==='DEMO-100'?'Demonstration data — not connected to live ShowTails records':'Live records from Glide Tables API · '+rows.length+' rows retrieved (verify full-table coverage)';render();}catch(e){el('viewport').replaceChildren();const box=document.createElement('div');box.className='error';box.textContent=e.message;el('viewport').append(box);}}
+el('load').onclick=load;el('rabbitId').addEventListener('keydown',e=>{if(e.key==='Enter')load();});el('depth').onchange=render;el('search').oninput=()=>{if(rootId)render();};
+for(const id of ['colorFilter','colorMode','geneticsFilter','rabbitryFilter','sexFilter','registeredFilter','gcFilter','repeatFilter','missingFilter']){
+ el(id).addEventListener('input',()=>{if(rootId)render();});
+}
+el('clearFilters').onclick=()=>{
+ for(const id of ['colorFilter','geneticsFilter','rabbitryFilter','search'])el(id).value='';
+ for(const id of ['colorMode','sexFilter','missingFilter'])el(id).selectedIndex=0;
+ for(const id of ['registeredFilter','gcFilter','repeatFilter'])el(id).checked=false;
+ if(rootId)render();
+};el('expand').onclick=()=>{collapsed.clear();render();};el('collapse').onclick=()=>{for(const k of children.keys())collapsed.add(k);render();};el('print').onclick=()=>window.print();el('zoomIn').onclick=()=>zoomCenter(1.25);el('zoomOut').onclick=()=>zoomCenter(.8);el('fitView').onclick=fitTree;el('resetView').onclick=resetView;wirePanZoom();
+el('rabbitId').value=params.get('RABBITID')||params.get('PEDID')||'DEMO-100';load();
+</script></body></html>
