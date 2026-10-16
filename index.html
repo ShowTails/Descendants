@@ -39,6 +39,7 @@
 <label>Missing field<select id="missingFilter"><option value="">None</option><option value="rabbitName">Name</option><option value="earNumber">Ear number</option><option value="color">Color</option><option value="weightLbs">Weight</option><option value="dob">DOB</option><option value="arbaRegistrationNumber">Registration</option><option value="grandChampionNumber">GC number</option><option value="genotype">Genetics</option><option value="breederSRabbitryName">Rabbitry</option></select></label>
 <button class="secondary" id="clearFilters" type="button">Clear Filters</button>
 </div><div class="filter-count" id="filterCount">No active highlight filters.</div></details>
+<details class="filter-panel" id="diagnostics" open><summary>Glide Connection Tests · Diagnose Missing Descendants</summary><div class="filter-count" id="testResults">Tests run automatically after loading a rabbit.</div><button class="secondary" id="copyTests" type="button">Copy Test Results</button></details>
 <div class="stats"><div class="stat"><strong id="unique">—</strong><small>Unique descendants</small></div><div class="stat"><strong id="generations">—</strong><small>Recorded generations</small></div><div class="stat"><strong id="direct">—</strong><small>Direct offspring</small></div><div class="stat"><strong id="branches">—</strong><small>Visible tree cards</small></div></div>
 <p class="mode" id="mode"></p><p class="hint">The selected rabbit is centered at the top. Each generation branches horizontally across the row below its parent. Drag to pan, scroll to zoom, or pinch with two fingers. Select + or − on a card to expand or collapse branches. Rabbits may appear in more than one branch when pedigrees overlap.</p><div class="viewport" id="viewport"><p class="empty">Select a rabbit from ShowTails or enter its Rabbit ID above. The viewer loads live Glide data only.</p></div></main>
 <script type="module">
@@ -88,6 +89,7 @@ const C = {rabbitId:'3yX2y',rabbitName:'NEL3b',sireId:'w065N',damId:'wkGAs',sex:
 const params = new URLSearchParams(location.search);
 let rows=[], byId=new Map(), children=new Map(), collapsed=new Set(), rootId='', currentMaxDepth=0;
 let occurrenceCounts=new Map();
+let lastRawResult=null,lastLoaded=[];
 const el=id=>document.getElementById(id);
 const norm=v=>String(v??'').trim();
 const view={x:0,y:0,scale:1,min:.06,max:4,initialized:false};
@@ -114,10 +116,41 @@ async function fetchRows(id){
  }
  const rabbitsTable=glide.table({token:GLIDE_API_TOKEN,app:APP_ID,table:TABLE_ID,columns:COLUMN_DEFS});
  const result=await rabbitsTable.get();
+ lastRawResult=result;
  const loaded=normalizeRows(result);
+ lastLoaded=loaded;
  if(!loaded.length)throw Error('Glide returned no rabbit rows. Verify your token, plan, and table access.');
  if(result?.next||result?.nextPageToken||result?.hasMore)console.warn('Glide returned a pagination indicator. Additional pages may need retrieval.');
  return loaded;
+}
+function runDiagnostics(id){
+ const raw=lastRawResult, first=lastLoaded[0];
+ const root=byId.get(id), direct=children.get(id)||[];
+ const counts={};for(const r of rows){if(norm(r.sireId)===id)counts.sire=(counts.sire||0)+1;if(norm(r.damId)===id)counts.dam=(counts.dam||0)+1;}
+ const nonempty=key=>rows.filter(r=>norm(r[key])).length;
+ const rawKeys=raw&&typeof raw==='object'&&!Array.isArray(raw)?Object.keys(raw):[];
+ const marker=Object.fromEntries(['next','nextPageToken','hasMore','cursor','pageToken','pagination','nextCursor'].filter(k=>raw?.[k]!==undefined).map(k=>[k,String(raw[k]).slice(0,100)]));
+ const lines=[
+ 'SHOWTAILS DESCENDANT DATA TESTS',
+ 'Requested Rabbit ID: '+id,
+ 'Test 1 · Glide returned rows: '+lastLoaded.length,
+ 'Test 2 · Rows with rabbitId: '+rows.length,
+ 'Test 3 · Selected rabbit found: '+(root?'YES':'NO'),
+ 'Test 4 · Direct sireId matches: '+(counts.sire||0),
+ 'Test 5 · Direct damId matches: '+(counts.dam||0),
+ 'Test 6 · Total direct offspring matches: '+direct.length,
+ 'Test 7 · Records with sireId: '+nonempty('sireId'),
+ 'Test 8 · Records with damId: '+nonempty('damId'),
+ 'Test 9 · Raw response type: '+(Array.isArray(raw)?'array':typeof raw),
+ 'Test 10 · Response properties: '+(rawKeys.join(', ')||'(none)'),
+ 'Test 11 · Pagination indicators: '+(Object.keys(marker).length?JSON.stringify(marker):'none detected'),
+ 'Test 12 · First row properties: '+(first&&typeof first==='object'?Object.keys(first).join(', '):'(none)'),
+ 'Test 13 · First normalized rabbit ID: '+(rows[0]?.rabbitId||'(missing)'),
+ 'Test 14 · First normalized sireId: '+(rows.find(r=>norm(r.sireId))?.sireId||'(none)'),
+ 'Test 15 · First normalized damId: '+(rows.find(r=>norm(r.damId))?.damId||'(none)'),
+ 'Assessment: '+(!root?'Selected rabbit not present in returned rows.':direct.length?'Direct descendants found.':'No direct offspring relationships in returned batch. Check pagination and sireId/damId values.')
+ ];
+ const report=lines.join('\n');el('testResults').textContent=report;el('testResults').style.whiteSpace='pre-wrap';window.__showtailsTestReport=report;
 }
 function countOccurrences(id){
  occurrenceCounts=new Map();
@@ -156,8 +189,8 @@ const kids=children.get(id)||[];const cycle=path.has(id);if(kids.length&&!cycle&
 const active=Boolean(query||el('colorFilter').value||el('geneticsFilter').value||el('rabbitryFilter').value||el('sexFilter').value||el('missingFilter').value||el('registeredFilter').checked||el('gcFilter').checked||el('repeatFilter').checked);
 el('filterCount').textContent=active?`${matchCount} of ${cards} visible cards match at least one active highlight filter. Matches flash; nonmatching cards remain visible.`:'No active highlight filters.';
 if(query){const found=host.querySelector('.filter-keyword');if(found)centerMatch(found);}}
-async function load(){const id=norm(el('rabbitId').value);if(!id)return;el('viewport').textContent='Loading rabbit records…';try{const result=await fetchRows(id);makeIndex(result);rootId=id;collapsed.clear();view.initialized=false;countOccurrences(id);const s=stats(id);el('unique').textContent=s.total.toLocaleString();el('generations').textContent=s.max;el('direct').textContent=s.direct;el('mode').textContent='Live records from Glide Tables API · '+rows.length+' rows retrieved (verify full-table coverage)';render();}catch(e){el('viewport').replaceChildren();const box=document.createElement('div');box.className='error';box.textContent=e.message;el('viewport').append(box);}}
-el('load').onclick=load;el('rabbitId').addEventListener('keydown',e=>{if(e.key==='Enter')load();});el('depth').onchange=render;el('search').oninput=()=>{if(rootId)render();};
+async function load(){const id=norm(el('rabbitId').value);if(!id)return;el('viewport').textContent='Loading rabbit records…';try{const result=await fetchRows(id);makeIndex(result);runDiagnostics(id);rootId=id;collapsed.clear();view.initialized=false;countOccurrences(id);const s=stats(id);el('unique').textContent=s.total.toLocaleString();el('generations').textContent=s.max;el('direct').textContent=s.direct;el('mode').textContent='Live records from Glide Tables API · '+rows.length+' rows retrieved (verify full-table coverage)';render();}catch(e){el('viewport').replaceChildren();const box=document.createElement('div');box.className='error';box.textContent=e.message;el('viewport').append(box);}}
+el('copyTests').onclick=async()=>{const t=window.__showtailsTestReport||'No tests have run.';try{await navigator.clipboard.writeText(t);el('copyTests').textContent='Copied!';}catch{prompt('Copy test results:',t);}};el('load').onclick=load;el('rabbitId').addEventListener('keydown',e=>{if(e.key==='Enter')load();});el('depth').onchange=render;el('search').oninput=()=>{if(rootId)render();};
 for(const id of ['colorFilter','colorMode','geneticsFilter','rabbitryFilter','sexFilter','registeredFilter','gcFilter','repeatFilter','missingFilter']){
  el(id).addEventListener('input',()=>{if(rootId)render();});
 }
