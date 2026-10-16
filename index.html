@@ -40,7 +40,7 @@
 <button class="secondary" id="clearFilters" type="button">Clear Filters</button>
 </div><div class="filter-count" id="filterCount">No active highlight filters.</div></details>
 <div class="stats"><div class="stat"><strong id="unique">—</strong><small>Unique descendants</small></div><div class="stat"><strong id="generations">—</strong><small>Recorded generations</small></div><div class="stat"><strong id="direct">—</strong><small>Direct offspring</small></div><div class="stat"><strong id="branches">—</strong><small>Visible tree cards</small></div></div>
-<p class="mode" id="mode"></p><p class="hint">The selected rabbit is centered at the top. Each generation branches horizontally across the row below its parent. Drag to pan, scroll to zoom, or pinch with two fingers. Select + or − on a card to expand or collapse branches. Rabbits may appear in more than one branch when pedigrees overlap.</p><div class="viewport" id="viewport"><p class="empty">Enter a Rabbit ID to begin. Live data loads directly from Glide once the API token is configured in the HTML.</p></div></main>
+<p class="mode" id="mode"></p><p class="hint">The selected rabbit is centered at the top. Each generation branches horizontally across the row below its parent. Drag to pan, scroll to zoom, or pinch with two fingers. Select + or − on a card to expand or collapse branches. Rabbits may appear in more than one branch when pedigrees overlap.</p><div class="viewport" id="viewport"><p class="empty">Select a rabbit from ShowTails or enter its Rabbit ID above. The viewer loads live Glide data only.</p></div></main>
 <script type="module">
 'use strict';
 import * as glide from "https://esm.sh/@glideapps/tables";
@@ -86,17 +86,6 @@ function readCell(row,logical,column){
 }
 const C = {rabbitId:'3yX2y',rabbitName:'NEL3b',sireId:'w065N',damId:'wkGAs',sex:'6lE2e',earNumber:'IjQAs',color:'7b1NR',dob:'J5KOz',ownerEmail:'ubKqh',secondOwner:'18W93',status:'l8yJA',breederSRabbitryName:'Me4W5',weightLbs:'1fVZU',earLength:'Rsov4',genotype:'onWoH',manuallyEnteredLegs:'0lrJV',arbaRegistrationNumber:'hZuje',grandChampionNumber:'DFEM6',customPedigreeData:'Jn1Wr'};
 const params = new URLSearchParams(location.search);
-const DEMO = [
- {rabbitId:'DEMO-100',rabbitName:"PH's Legacy",sex:'Buck',earNumber:'L100',color:'Tortoise'},
- {rabbitId:'DEMO-101',rabbitName:"PH's Champion",sireId:'DEMO-100',sex:'Buck',earNumber:'C101',color:'Black'},
- {rabbitId:'DEMO-102',rabbitName:"PH's Grace",damId:'DEMO-100',sex:'Doe',earNumber:'G102',color:'Blue'},
- {rabbitId:'DEMO-103',rabbitName:"PH's Victory",sireId:'DEMO-101',sex:'Buck',earNumber:'V103',color:'Tortoise'},
- {rabbitId:'DEMO-104',rabbitName:"PH's Valor",sireId:'DEMO-101',sex:'Doe',earNumber:'V104',color:'Black'},
- {rabbitId:'DEMO-105',rabbitName:"PH's Hope",damId:'DEMO-102',sex:'Doe',earNumber:'H105',color:'Blue'},
- {rabbitId:'DEMO-106',rabbitName:"PH's Faith",damId:'DEMO-102',sex:'Doe',earNumber:'F106',color:'Broken'},
- {rabbitId:'DEMO-107',rabbitName:"PH's Promise",sireId:'DEMO-103',damId:'DEMO-105',sex:'Buck',earNumber:'P107',color:'Tortoise'},
- {rabbitId:'DEMO-108',rabbitName:"PH's Honor",damId:'DEMO-107',sex:'Doe',earNumber:'H108',color:'Black'}
-];
 let rows=[], byId=new Map(), children=new Map(), collapsed=new Set(), rootId='', currentMaxDepth=0;
 let occurrenceCounts=new Map();
 const el=id=>document.getElementById(id);
@@ -120,7 +109,6 @@ function formatDob(value){if(!value)return '';const text=String(value);const mat
 function normalize(r){let x={};for(let [key,col] of Object.entries(C))x[key]=readCell(r,key,col);return x;}
 function makeIndex(input){rows=input.map(normalize).filter(r=>norm(r.rabbitId));byId=new Map(rows.map(r=>[norm(r.rabbitId),r]));children=new Map();for(const r of rows){for(const parent of new Set([norm(r.sireId),norm(r.damId)])){if(!parent)continue;if(!children.has(parent))children.set(parent,[]);children.get(parent).push(r);}}for(const group of children.values())group.sort((a,b)=>norm(a.rabbitName).localeCompare(norm(b.rabbitName)));}
 async function fetchRows(id){
- if(id==='DEMO-100')return DEMO;
  if(!GLIDE_API_TOKEN || GLIDE_API_TOKEN==='PASTE_YOUR_GLIDE_TABLES_API_TOKEN_HERE'){
   throw Error('Add your Glide Tables API token to GLIDE_API_TOKEN in descendants.html before publishing.');
  }
@@ -168,7 +156,7 @@ const kids=children.get(id)||[];const cycle=path.has(id);if(kids.length&&!cycle&
 const active=Boolean(query||el('colorFilter').value||el('geneticsFilter').value||el('rabbitryFilter').value||el('sexFilter').value||el('missingFilter').value||el('registeredFilter').checked||el('gcFilter').checked||el('repeatFilter').checked);
 el('filterCount').textContent=active?`${matchCount} of ${cards} visible cards match at least one active highlight filter. Matches flash; nonmatching cards remain visible.`:'No active highlight filters.';
 if(query){const found=host.querySelector('.filter-keyword');if(found)centerMatch(found);}}
-async function load(){const id=norm(el('rabbitId').value);if(!id)return;el('viewport').textContent='Loading rabbit records…';try{const result=await fetchRows(id);makeIndex(result);rootId=id;collapsed.clear();view.initialized=false;countOccurrences(id);const s=stats(id);el('unique').textContent=s.total.toLocaleString();el('generations').textContent=s.max;el('direct').textContent=s.direct;el('mode').textContent=id==='DEMO-100'?'Demonstration data — not connected to live ShowTails records':'Live records from Glide Tables API · '+rows.length+' rows retrieved (verify full-table coverage)';render();}catch(e){el('viewport').replaceChildren();const box=document.createElement('div');box.className='error';box.textContent=e.message;el('viewport').append(box);}}
+async function load(){const id=norm(el('rabbitId').value);if(!id)return;el('viewport').textContent='Loading rabbit records…';try{const result=await fetchRows(id);makeIndex(result);rootId=id;collapsed.clear();view.initialized=false;countOccurrences(id);const s=stats(id);el('unique').textContent=s.total.toLocaleString();el('generations').textContent=s.max;el('direct').textContent=s.direct;el('mode').textContent='Live records from Glide Tables API · '+rows.length+' rows retrieved (verify full-table coverage)';render();}catch(e){el('viewport').replaceChildren();const box=document.createElement('div');box.className='error';box.textContent=e.message;el('viewport').append(box);}}
 el('load').onclick=load;el('rabbitId').addEventListener('keydown',e=>{if(e.key==='Enter')load();});el('depth').onchange=render;el('search').oninput=()=>{if(rootId)render();};
 for(const id of ['colorFilter','colorMode','geneticsFilter','rabbitryFilter','sexFilter','registeredFilter','gcFilter','repeatFilter','missingFilter']){
  el(id).addEventListener('input',()=>{if(rootId)render();});
@@ -179,5 +167,5 @@ el('clearFilters').onclick=()=>{
  for(const id of ['registeredFilter','gcFilter','repeatFilter'])el(id).checked=false;
  if(rootId)render();
 };el('expand').onclick=()=>{collapsed.clear();render();};el('collapse').onclick=()=>{for(const k of children.keys())collapsed.add(k);render();};el('print').onclick=()=>window.print();el('zoomIn').onclick=()=>zoomCenter(1.25);el('zoomOut').onclick=()=>zoomCenter(.8);el('fitView').onclick=fitTree;el('resetView').onclick=resetView;wirePanZoom();
-el('rabbitId').value=params.get('RABBITID')||params.get('PEDID')||'DEMO-100';load();
+el('rabbitId').value=params.get('RABBITID')||params.get('PEDID')||'';if(el('rabbitId').value.trim())load();
 </script></body></html>
